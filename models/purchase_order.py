@@ -12,7 +12,15 @@ class PurchaseOrder(models.Model):
         copy=False,
         help="Indicates if the purchase order has been sent to the vendor via email."
     )
+    origin = fields.Char(copy=True)
+    is_sent_label = fields.Char(string="Estado de Envío", compute="_compute_is_sent_label")
 
+    @api.depends('is_sent')
+    def _compute_is_sent_label(self):
+        for record in self:
+            record.is_sent_label = "Enviado" if record.is_sent else "No enviado"
+
+    
     @api.returns('mail.message', lambda value: value.id)
     def message_post(self, **kwargs):
         # Llamamos al método original primero
