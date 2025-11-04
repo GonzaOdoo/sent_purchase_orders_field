@@ -4,6 +4,25 @@ from datetime import datetime, timedelta
 import logging
 
 _logger = logging.getLogger(__name__)
+
+AREA_ORIGEN_SELECTION = [
+    ('laboratorio', 'LABORATORIO'),
+    ('compras', 'COMPRAS'),
+    ('biologia_molecular', 'BIOLOGIA MOLECULAR'),
+    ('control_calidad', 'CONTROL DE CALIDAD'),
+    ('control_calidad_externo', 'CONTROL DE CALIDAD EXTERNO'),
+    ('derivaciones_internacionales', 'DERIVACIONES INTERNACIONALES'),
+    ('equipos', 'EQUIPOS'),
+    ('generales', 'GENERALES'),
+    ('hematologia', 'HEMATOLOGIA'),
+    ('informatica', 'INFORMATICA'),
+    ('microbiologia', 'MICROBIOLOGIA'),
+    ('muebles_equipos', 'Muebles y Equipos'),
+    ('procesos_especiales', 'PROCESOS ESPECIALES'),
+    ('reparaciones', 'REPARACIONES'),
+    ('toma_muestra', 'TOMA DE MUESTRA'),
+]
+
 class PurchaseOrder(models.Model):
     _inherit = 'purchase.order'
 
@@ -14,6 +33,12 @@ class PurchaseOrder(models.Model):
     )
     origin = fields.Char(copy=True)
     is_sent_label = fields.Char(string="Estado de Envío", compute="_compute_is_sent_label")
+    origen_solicitante = fields.Selection(
+        selection=AREA_ORIGEN_SELECTION,
+        string="Área de Origen",
+        required=False,
+    )
+    
 
     @api.depends('is_sent')
     def _compute_is_sent_label(self):
