@@ -39,6 +39,47 @@ class PurchaseOrder(models.Model):
         required=False,
     )
     
+    approved_user_ids = fields.Many2many(
+        comodel_name='res.users',
+        string='Usuarios que aprobaron',
+        compute='_compute_approved_user_ids',
+        store=True
+    )
+    approval_status = fields.Selection([
+        ('untouch', 'Sin aprobaciones'),
+        ('pending', 'Falta 1 aprobación'),
+        ('complete', 'Totalmente aprobado')
+    ], string='Estado de aprobación', compute='_compute_approval_status', store=True)
+    
+    @api.depends('message_ids')
+    def _compute_approved_user_ids(self):
+        ApprovalEntry = self.env['studio.approval.entry']
+        for record in self:
+            # Buscar entradas de aprobación para este registro
+            approvals = ApprovalEntry.search([
+                ('model', '=', 'purchase.order'),
+                ('res_id', '=', record.id),
+                ('user_id', '!=', False)
+            ])
+            user_ids = approvals.mapped('user_id').ids
+            record.approved_user_ids = [(6, 0, user_ids)]
+
+    @api.depends('approved_user_ids', 'state')
+    def _compute_approval_status(self):
+        for record in self:
+            # Si ya está confirmada como orden de compra, se considera totalmente aprobada
+            if record.state in ('purchase', 'done'):
+                record.approval_status = 'complete'
+            else:
+                count = len(record.approved_user_ids)
+                if count == 0:
+                    record.approval_status = 'untouch'
+                elif count == 1:
+                    record.approval_status = 'pending'
+                elif count >= 2:
+                    record.approval_status = 'complete'
+                else:
+                    record.approval_status = 'untouch'
 
     @api.depends('is_sent')
     def _compute_is_sent_label(self):
